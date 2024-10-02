@@ -6,7 +6,7 @@ const FILENAME_MACOS = "yt-dlp_macos";
 const FILENAME_LINUX = "yt-dlp_linux";
 const OS = Deno.build.os;
 const AUDIO_ID: number = 140;
-const VIDEO_ID: number = 612;
+const VIDEO_ID: number = 609;
 
 /**
  * Checks if yt-dlp is installed and accessible in the system PATH.
@@ -23,8 +23,8 @@ async function checkYtDlpInstalled(): Promise<boolean> {
 }
 
 /**
- * Gets the download URL for yt-dlp based on the operating system.
- * @param os The operating system (windows, linux, or darwin).
+ * Gets the latest yt-dlp executable URL for the current the operating system.
+ * @param os - The operating system used (windows, linux, or darwin).
  * @returns The URL to download yt-dlp for the specified OS.
  * @throws Will throw an error for unsupported operating systems.
  */
@@ -44,8 +44,8 @@ function getYtDlpUrl(os: string): string {
 }
 
 /**
- * Gets the appropriate filename for yt-dlp based on the operating system.
- * @param os The operating system (windows, linux, or darwin).
+ * Returns the OS-appropriate executable yt-dlp filename.
+ * @param os - The operating system used (windows, linux, or darwin).
  * @returns The filename for yt-dlp on the specified OS.
  * @throws Will throw an error for unsupported operating systems.
  */
@@ -64,6 +64,8 @@ function getYtDlpFileName(os: string): string {
 
 /**
  * Downloads the appropriate yt-dlp executable for the current operating system.
+ * Saves the executable on the current directory.
+ * Changes file mode to 755 (executable).
  * @throws Will throw an error if the download fails.
  */
 async function downloadYtDlp(): Promise<void> {
@@ -99,6 +101,10 @@ function updatePath(): void {
 
 /**
  * Gets the appropriate yt-dlp command based on the current operating system.
+ * If yt-dlp is installed from a package manager, `yt-dlp` is the command for Unix, `yt-dlp.exe`
+ * for Windows.
+ * If yt-dlp was downloaded from GitHub, this function returns the corresponding command.
+ * @param isInstalled - Boolean flag signifying if yt-dlp is already installed
  * @returns The command to run yt-dlp on the current OS.
  */
 function getYtDlpCommand(isInstalled: boolean): string {
@@ -119,22 +125,51 @@ function getYtDlpCommand(isInstalled: boolean): string {
 }
 
 /**
+ * Processes a filename by removing the file extension and replacing spaces with underscores.
+ *
+ * This function takes a filename (which may include a file extension) and performs two operations:
+ * 1. Removes the file extension by splitting at the last occurrence of a period.
+ * 2. Replaces all whitespace characters (spaces, tabs, line breaks) with underscores.
+ *
+ * @param filename - The original filename, which may include spaces and a file extension.
+ * @returns A processed string with the file extension removed and spaces replaced by underscores.
+ *
+ * @example
+ * const original = "some text goes here.mp3";
+ * const processed = processFilename(original);
+ * console.log(processed); // Output: "some_text_goes_here"
+ */
+function processFilename(filename: string): string {
+    // Split the string at the last occurrence of '.'
+    const [namePart] = filename.split(/\.(?=[^.]+$)/);
+
+    // Replace spaces with underscores
+    const processedName = namePart.replace(/\s+/g, "_");
+
+    return processedName;
+}
+
+/**
  * Runs the yt-dlp command to download audio from the given URL.
- * @param url The YouTube video URL to download audio from.
+ * @param url - The video URL to download audio from.
+ * @param input - Format ID from `yt-dlp -F <video url>`
+ * @param ytDlpCommand - yt-dlp command for OS, depending on installation (GitHub or package manager)
+ * @returns A {Promise<void>} A promise that resolves when Deno.Command runs successfully
  */
 async function runYtDlpCommand(
     url: string,
-    isInstalled: boolean,
     input: number,
+    ytDlpCommand: string,
 ): Promise<void> {
-    const ytDlpCommand = getYtDlpCommand(isInstalled);
-
-    const [mode, ext]: [string, string] = input === 140
+    // TODO: check VIDEO_ID. Rotate between different IDs, e.g. 606, 612, depending on availability
+    const [mode, ext]: [string, string] = input === AUDIO_ID
         ? ["audio", "m4a"]
-        : input === 612
+        : input === VIDEO_ID
         ? ["video", "mp4"]
         : (() => {
-            throw new Error("Invalid input. Enter 140 (audio) or 612 (video)");
+            throw new Error(
+                `Invalid input. Enter  ${AUDIO_ID} (audio) or ${VIDEO_ID} (video)`,
+            );
         })();
 
     console.log(`Downloading ${mode}...`);
@@ -156,9 +191,12 @@ async function runYtDlpCommand(
  * Merges video and audio files using ffmpeg and then deletes the input files.
  *
  * This function performs the following steps:
- * 1. Executes an ffmpeg command to merge 'my_video.mp4' and 'my_audio.m4a' into 'Output.mp4'.
+ * 1. Executes an ffmpeg command to merge 'my_video.mp4' and 'my_audio.m4a' into an output.mp4.
  * 2. Waits for the ffmpeg process to complete.
  * 3. If successful, deletes the input files ('my_video.mp4' and 'my_audio.m4a').
+ *
+ * @param url - The video URL to download audio from.
+ * @param ytDlpCommand - yt-dlp command for OS, depending on installation (GitHub or package manager)
  *
  * @throws {Error} If the ffmpeg process exits with a non-zero status code.
  * @throws {Deno.errors.NotFound} If input files are not found.
@@ -180,8 +218,21 @@ async function runYtDlpCommand(
  * }
  * ```
  */
-async function mergeAndCleanup(): Promise<void> {
+// TODO: Split function into two. merge() and cleanup()
+async function mergeAndCleanup(
+    url: string,
+    ytDlpCommand: string,
+): Promise<void> {
     try {
+        const title = new Deno.Command(ytDlpCommand, {
+            args: ["--print", "filename", url],
+        });
+        const output = await title.output();
+        const out = new TextDecoder().decode(
+            output.success ? output.stdout : output.stderr,
+        );
+        const videoTitle = processFilename(out.trim());
+
         // Create a new command
         const ffmpegCommand = new Deno.Command("ffmpeg", {
             args: [
@@ -195,7 +246,7 @@ async function mergeAndCleanup(): Promise<void> {
                 "aac",
                 "-strict",
                 "experimental",
-                "Output.mp4",
+                `${videoTitle}.mp4`,
             ],
         });
 
@@ -211,7 +262,7 @@ async function mergeAndCleanup(): Promise<void> {
         }
 
         // Log success message
-        console.log("FFmpeg process completed successfully");
+        console.log("ffmpeg process completed successfully");
         console.log(new TextDecoder().decode(stdout));
 
         // Delete input files
@@ -234,6 +285,8 @@ async function mergeAndCleanup(): Promise<void> {
 /**
  * Main function that orchestrates the yt-dlp download and execution process.
  * It checks for yt-dlp installation, downloads it if necessary, and runs the video download command.
+ * @example
+ * $ deno run -A main.ts https://youtu.be/dQw4w9WgXcQ
  */
 async function main() {
     const { args } = await new Command()
@@ -245,6 +298,7 @@ async function main() {
 
     const url = args[0];
     const isInstalled = await checkYtDlpInstalled();
+    const ytDlpCommand = getYtDlpCommand(isInstalled);
 
     if (!isInstalled) {
         await downloadYtDlp();
@@ -253,11 +307,11 @@ async function main() {
 
     try {
         // Download audio stream
-        await runYtDlpCommand(url, isInstalled, AUDIO_ID);
+        await runYtDlpCommand(url, AUDIO_ID, ytDlpCommand);
         // Download video stream
-        await runYtDlpCommand(url, isInstalled, VIDEO_ID);
+        await runYtDlpCommand(url, VIDEO_ID, ytDlpCommand);
         // Merge streams and tidy up
-        await mergeAndCleanup();
+        await mergeAndCleanup(ytDlpCommand, url);
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Failed with error: ", error.message);
