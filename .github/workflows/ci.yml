@@ -33,9 +33,9 @@ jobs:
         curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
         echo "$(ls)"
 
-
     - name: Test yt-dlp by checking version
-      run: yt-dlp_linux --version
+      run: | 
+        chmod u+x yt-dlp_linux && yt-dlp_linux --version
 
     - name: Install ffmpeg on Ubuntu
       run: | 
