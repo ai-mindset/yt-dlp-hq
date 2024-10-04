@@ -35,9 +35,10 @@ jobs:
       run: yt-dlp_linux --version
 
     - name: Install ffmpeg on Ubuntu
-      run: | add-apt-repository universe
-             apt update
-             apt install ffmpeg
+      run: | 
+        add-apt-repository universe
+        apt update
+        apt install ffmpeg
 
     - name: Test ffmpeg by checking version
       run: ffmpeg -version
