@@ -29,16 +29,17 @@ jobs:
         deno-version: rc 
 
     - name: Download yt-dlp_linux with curl
-      run: curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
+      run: | 
+        curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
+        echo "$(ls)"
+
 
     - name: Test yt-dlp by checking version
       run: yt-dlp_linux --version
 
     - name: Install ffmpeg on Ubuntu
       run: | 
-        add-apt-repository universe
-        apt update
-        apt install ffmpeg
+        add-apt-repository universe && apt update && apt install ffmpeg
 
     - name: Test ffmpeg by checking version
       run: ffmpeg -version
