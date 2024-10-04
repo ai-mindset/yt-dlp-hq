@@ -22,10 +22,6 @@ jobs:
       run: |
         apt-get update && apt-get install sudo -y
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install curl build-essential -y
-
     - name: Set up GitHub Actions workflow with a specific version of Deno 
       uses: denoland/setup-deno@v1
       with:
