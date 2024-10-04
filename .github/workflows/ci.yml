@@ -35,7 +35,7 @@ jobs:
 
     - name: Test yt-dlp by checking version
       run: | 
-        chmod u+x yt-dlp_linux && yt-dlp_linux --version
+        chmod u+x yt-dlp_linux && ./yt-dlp_linux --version
 
     - name: Install ffmpeg on Ubuntu
       run: | 
