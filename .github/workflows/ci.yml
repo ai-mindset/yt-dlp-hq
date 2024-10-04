@@ -28,19 +28,19 @@ jobs:
       with:
         deno-version: rc 
 
-    - name: Setup yt-dlp using setup-yt-dlp
-      uses: AnimMouse/setup-yt-dlp@main
-      with:
-        with-ffmpeg: ${{ matrix.ffmpeg == 'with-ffmpeg' }}
-        version: ${{ matrix.version }}
-        nightly: ${{ matrix.nightly == 'nightly' }}
-
-    - name: Test yt-dlp-FFmpeg by checking version
-      if: matrix.ffmpeg == 'with-ffmpeg'
-      run: ffmpeg -version
+    - name: Download yt-dlp_linux with curl
+      run: curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
 
     - name: Test yt-dlp by checking version
-      run: yt-dlp --version
+      run: yt-dlp_linux --version
+
+    - name: Install ffmpeg on Ubuntu
+      run: | add-apt-repository universe
+             apt update
+             apt install ffmpeg
+
+    - name: Test ffmpeg by checking version
+      run: ffmpeg -version
 
     - name: Compile main.ts
       run: deno compile -NR main.ts -o yt-dlp-hq-${{ runner.os }}
