@@ -31,10 +31,19 @@ jobs:
       with:
         deno-version: rc 
 
-    - name: Setup yt-dlp
-      uses: AnimMouse/setup-yt-dlp@v1
+    - name: Setup yt-dlp using setup-yt-dlp
+      uses: AnimMouse/setup-yt-dlp@main
       with:
-        with-ffmpeg: true
+        with-ffmpeg: ${{ matrix.ffmpeg == 'with-ffmpeg' }}
+        version: ${{ matrix.version }}
+        nightly: ${{ matrix.nightly == 'nightly' }}
+
+    - name: Test yt-dlp-FFmpeg by checking version
+      if: matrix.ffmpeg == 'with-ffmpeg'
+      run: ffmpeg -version
+
+    - name: Test yt-dlp by checking version
+      run: yt-dlp --version
 
     - name: Compile main.ts
       run: deno compile -NR main.ts -o yt-dlp-hq-${{ runner.os }}
