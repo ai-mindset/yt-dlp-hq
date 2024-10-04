@@ -39,7 +39,7 @@ jobs:
 
     - name: Install ffmpeg on Ubuntu
       run: | 
-        add-apt-repository universe && apt update && apt install ffmpeg
+        sudo add-apt-repository universe && sudo apt update && sudo apt install ffmpeg
 
     - name: Test ffmpeg by checking version
       run: ffmpeg -version
