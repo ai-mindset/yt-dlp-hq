@@ -12,12 +12,12 @@ jobs:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest]
         os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    
-    steps:
-    - name: Action for checking out a repo 
+      runs-on: ${{ matrix.os }}
+      permissions:
+        contents: write
+
+      steps:
+        - name: Action for checking out a repo 
       uses: actions/checkout@v4
 
     - name: Install Act dependencies
@@ -48,7 +48,6 @@ jobs:
 
     - name: Cross-compile
       run: |
-        mkdir -p release
         echo "Compiling for Windows..." 
         deno compile -NR --target x86_64-pc-windows-msvc main.ts -o yt-dlp-hq.exe
         echo "Compiling for macOS Intel..." 
@@ -59,8 +58,13 @@ jobs:
         deno compile -NR --target x86_64-unknown-linux-gnu main.ts -o yt-dlp-hq-intel
         echo "Compiling for Linux ARM..." 
         deno compile -NR --target aarch64-unknown-linux-gnu main.ts -o yt-dlp-hq-arm
+
+    - name: Move executables to release/ 
+      run: |
+        echo "Create release/"
+        mkdir -p release
         echo "Move executables to release/"
-        mv yt-dlp-hq.exe yt-dlp-hq-* release/ || true
+        mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
         echo "List release/: $(ls -R release/)"
 
     - name: Upload artifacts
