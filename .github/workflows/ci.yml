@@ -45,15 +45,15 @@ jobs:
     - name: Cross-compile
       run: |
         echo "Compiling for Windows..." 
-        deno compile -NR --target x86_64-pc-windows-msvc main.ts -o yt-dlp-hq.exe
+        deno compile -NR --target x86_64-pc-windows-msvc main.ts --output yt-dlp-hq.exe
         echo "Compiling for macOS Intel..." 
-        deno compile -NR --target x86_64-apple-darwin main.ts -o yt-dlp-hq-mac-intel
+        deno compile -NR --target x86_64-apple-darwin main.ts --output yt-dlp-hq-mac-intel
         echo "Compiling for macOS ARM..." 
-        deno compile -NR --target aarch64-apple-darwin main.ts -o yt-dlp-hq-mac-arm
+        deno compile -NR --target aarch64-apple-darwin main.ts --output yt-dlp-hq-mac-arm
         echo "Compiling for Linux Intel..." 
-        deno compile -NR --target x86_64-unknown-linux-gnu main.ts -o yt-dlp-hq-intel
+        deno compile -NR --target x86_64-unknown-linux-gnu main.ts --output yt-dlp-hq-intel
         echo "Compiling for Linux ARM..." 
-        deno compile -NR --target aarch64-unknown-linux-gnu main.ts -o yt-dlp-hq-arm
+        deno compile -NR --target aarch64-unknown-linux-gnu main.ts --output yt-dlp-hq-arm
 
     - name: Move exe to release/ 
       run: |
