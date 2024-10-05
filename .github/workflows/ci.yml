@@ -8,16 +8,12 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [ubuntu-latest]
-      runs-on: ${{ matrix.os }}
-      permissions:
-        contents: write
-
-      steps:
-        - name: Action for checking out a repo 
+    runs-on: ubuntu-latest 
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Action for checking out a repo 
       uses: actions/checkout@v4
 
     - name: Install Act dependencies
@@ -25,7 +21,7 @@ jobs:
       run: |
         apt-get update && apt-get install sudo -y
 
-    - name: Set up GitHub Actions workflow with a specific version of Deno 
+    - name: Set up Deno 
       uses: denoland/setup-deno@v1
       with:
         deno-version: rc 
@@ -59,9 +55,8 @@ jobs:
         echo "Compiling for Linux ARM..." 
         deno compile -NR --target aarch64-unknown-linux-gnu main.ts -o yt-dlp-hq-arm
 
-    - name: Move executables to release/ 
+    - name: Move exe to release/ 
       run: |
-        echo "Create release/"
         mkdir -p release
         echo "Move executables to release/"
         mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
