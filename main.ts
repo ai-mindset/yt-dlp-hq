@@ -290,13 +290,14 @@ async function mergeAndCleanup(
  */
 async function main() {
     const { args } = await new Command()
-        .name("yt-dlp-downloader")
+        .name("yt-dlp-hq")
         .version("1.0.0")
         .description("Download high quality videos with audio, using yt-dlp")
         .arguments("<url:string>")
         .parse(Deno.args);
 
     const url = args[0];
+    console.log("URL passed: ", url);
     const isInstalled = await checkYtDlpInstalled();
     const ytDlpCommand = getYtDlpCommand(isInstalled);
 

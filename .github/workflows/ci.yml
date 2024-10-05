@@ -3,6 +3,7 @@ name: Compile and release
 on:
   push:
     branches: [ main ]
+    tags: - '*'
   pull_request:
     branches: [ main ]
 
@@ -42,6 +43,7 @@ jobs:
     - name: Test ffmpeg
       run: ffmpeg -version
 
+      # Quick and dirty way
     - name: Cross-compile
       run: |
         echo "Compiling for Windows..." 
