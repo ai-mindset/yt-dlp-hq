@@ -62,16 +62,11 @@ jobs:
         mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
         echo "List release/: $(ls -R release/)"
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
       with:
-        name: executables
-        path: release/
-        overwrite: true 
-        if-no-files-found: error
-
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: release/*
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: release/* 
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
