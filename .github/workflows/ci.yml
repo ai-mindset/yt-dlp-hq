@@ -33,7 +33,7 @@ jobs:
         curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
         echo "$(ls)"
 
-    - name: Test yt-dlp by checking version
+    - name: Test yt-dlp
       run: | 
         chmod u+x yt-dlp_linux && ./yt-dlp_linux --version
 
@@ -41,16 +41,31 @@ jobs:
       run: | 
         sudo add-apt-repository universe && sudo apt update && sudo apt install ffmpeg
 
-    - name: Test ffmpeg by checking version
+    - name: Test ffmpeg
       run: ffmpeg -version
 
-    - name: Compile main.ts
-      run: deno compile -NR main.ts -o yt-dlp-hq-${{ runner.os }}
+    - name: Compile and upload 
+      run: |
+        mkdir -p release
+        echo "Compiling for Windows..." 
+        deno compile -NR --target x86_64-pc-windows-msvc main.ts -o release/yt-dlp-hq.exe
+        echo "Compiling for macOS Intel..." 
+        deno compile -NR --target x86_64-apple-darwin main.ts -o release/yt-dlp-hq-mac-intel
+        echo "Compiling for macOS ARM..." 
+        deno compile -NR --target aarch64-apple-darwin main.ts -o release/yt-dlp-hq-mac-arm
+        echo "Compiling for Linux Intel..." 
+        deno compile -NR --target x86_64-unknown-linux-gnu main.ts -o release/yt-dlp-hq-intel
+        echo "Compiling for Linux ARM..." 
+        deno compile -NR --target aarch64-unknown-linux-gnu main.ts -o release/yt-dlp-hq-arm
 
-    - name: Create directory
-      run: mkdir release
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
       with:
-        name: yt-dlp-hq-${{ runner.os }}
-        path: release/yt-dlp-hq-${{ runner.os }}${{ runner.os == 'Windows' && '.exe' || '' }}
+        name: executables
+        path: release/
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: release/*
