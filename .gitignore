@@ -1,1 +1,6 @@
-.git
+out/
+*.m4a
+*.mp4
+.git/
+*.sh
+*.lock

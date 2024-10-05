@@ -1,0 +1,77 @@
+name: Build and Compile
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Action for checking out a repo 
+      uses: actions/checkout@v4
+
+    - name: Install Act dependencies
+      if: ${{ env.ACT }}
+      run: |
+        apt-get update && apt-get install sudo -y
+
+    - name: Set up Deno 
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: rc 
+
+    - name: Download yt-dlp_linux with curl
+      run: | 
+        curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
+        echo "$(ls)"
+
+    - name: Test yt-dlp
+      run: | 
+        chmod u+x yt-dlp_linux && ./yt-dlp_linux --version
+
+    - name: Install ffmpeg on Ubuntu
+      run: | 
+        sudo add-apt-repository universe && sudo apt update && sudo apt install ffmpeg
+
+    - name: Test ffmpeg
+      run: ffmpeg -version
+
+    - name: Cross-compile
+      run: |
+        echo "Compiling for Windows..." 
+        deno compile -NR --target x86_64-pc-windows-msvc --output yt-dlp-hq.exe main.ts
+        echo "Compiling for macOS Intel..." 
+        deno compile -NR --target x86_64-apple-darwin --output yt-dlp-hq-mac-intel main.ts
+        echo "Compiling for macOS ARM..." 
+        deno compile -NR --target aarch64-apple-darwin --output yt-dlp-hq-mac-arm main.ts
+        echo "Compiling for Linux Intel..." 
+        deno compile -NR --target x86_64-unknown-linux-gnu --output yt-dlp-hq-intel main.ts
+        echo "Compiling for Linux ARM..." 
+        deno compile -NR --target aarch64-unknown-linux-gnu --output yt-dlp-hq-arm main.ts
+
+    - name: Move exe to release/ 
+      run: |
+        mkdir -p release
+        echo "Move executables to release/"
+        mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
+        echo "List release/: $(ls -R release/)"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: executables
+        path: release/
+        overwrite: true 
+        if-no-files-found: error
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: release/*
