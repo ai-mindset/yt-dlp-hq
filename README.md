@@ -1,6 +1,7 @@
 # yt-dlp-hq
 High quality video downloads using yt-dlp and FFmpeg
 
+[![Compile and release](https://github.com/ai-mindset/yt-dlp-hq/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-mindset/yt-dlp-hq/actions/workflows/ci.yml)
 
 [yt-dlp](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#installation)  
 [FFmpeg](https://ffmpeg.org/)  
