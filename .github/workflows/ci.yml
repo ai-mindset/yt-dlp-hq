@@ -48,7 +48,7 @@ jobs:
       run: |
         mkdir -p release
         echo "Move executables to release/"
-        mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
+        mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
         echo "List release/: $(ls -R release/)"
 
     - name: Upload binaries to release
