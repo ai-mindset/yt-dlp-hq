@@ -47,9 +47,14 @@ jobs:
     - name: Move exe to release/ 
       run: |
         mkdir -p release
-        echo "Move executables to release/ "
-        mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
-        echo "List release/: $(ls -R release/)"
+        if ls yt-dlp-hq* >/dev/null 2>&1; then
+          mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
+          echo "Executables moved to release/ "
+          echo "List release/: $(ls -R release/)"
+        else
+          echo "No files starting with 'yt-dlp-hq-' found in the current directory."
+        fi
+
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
