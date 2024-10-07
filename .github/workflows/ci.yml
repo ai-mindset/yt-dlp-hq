@@ -20,6 +20,8 @@ jobs:
     - name: Action for checking out a repo 
       uses: actions/checkout@v4
       id: tag_version
+
+    -name: GitHub Tag action
       uses: mathieudutour/github-tag-action@v6.2
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
