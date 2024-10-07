@@ -20,11 +20,6 @@ jobs:
     - name: Action for checking out a repo 
       uses: actions/checkout@v4
 
-    - name: Install Act dependencies
-      if: ${{ env.ACT }}
-      run: |
-        apt-get update && apt-get install sudo -y
-
     - name: Set up Deno 
       uses: denoland/setup-deno@v1
       with:
@@ -39,11 +34,11 @@ jobs:
       run: | 
         chmod u+x yt-dlp_linux && ./yt-dlp_linux --version
 
-    - name: Install ffmpeg on Ubuntu
+    - name: Install FFmpeg on Ubuntu
       run: | 
         sudo add-apt-repository universe && sudo apt update && sudo apt install ffmpeg
 
-    - name: Test ffmpeg
+    - name: Test FFmpeg
       run: ffmpeg -version
 
       # Quick and dirty way
