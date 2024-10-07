@@ -32,28 +32,29 @@ jobs:
 
     - name: Test yt-dlp
       run: | 
-        chmod u+x yt-dlp_linux && ./yt-dlp_linux --version
+        chmod u+x yt-dlp_linux 
+        ./yt-dlp_linux --version
 
     - name: Install FFmpeg on Ubuntu
       run: | 
-        sudo add-apt-repository universe && sudo apt update && sudo apt install ffmpeg
+        sudo add-apt-repository universe 
+        sudo apt update 
+        sudo apt install ffmpeg
 
     - name: Test FFmpeg
       run: ffmpeg -version
 
     - name: Build step
-      run: deno task build
-      
-    - name: Move exe to release/ 
       run: |
         mkdir -p release
-        if ls yt-dlp-hq* >/dev/null 2>&1; then
-          mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
+        deno task build
+        if ls release/yt-dlp-hq* >/dev/null 2>&1; then
+          # mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
           echo "release_empty=false" >> $GITHUB_ENV
-          echo "Executables moved to release/ "
+          echo "Executables generated"
           echo "List release/: $(ls -R release/)"
         else
-          echo "No files starting with 'yt-dlp-hq-' found in the current directory."
+          echo "No files starting with 'yt-dlp-hq-' found in the release/"
           echo "release_empty=true" >> $GITHUB_ENV
         fi
 
