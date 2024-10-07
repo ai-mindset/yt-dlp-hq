@@ -41,32 +41,28 @@ jobs:
     - name: Test FFmpeg
       run: ffmpeg -version
 
-      # Quick and dirty way
-    - name: Cross-compile
-      run: |
-        echo "Compiling for Windows..." 
-        deno compile -NR --target x86_64-pc-windows-msvc --output yt-dlp-hq.exe main.ts
-        echo "Compiling for macOS Intel..." 
-        deno compile -NR --target x86_64-apple-darwin --output yt-dlp-hq-mac-intel main.ts
-        echo "Compiling for macOS ARM..." 
-        deno compile -NR --target aarch64-apple-darwin --output yt-dlp-hq-mac-arm main.ts
-        echo "Compiling for Linux Intel..." 
-        deno compile -NR --target x86_64-unknown-linux-gnu --output yt-dlp-hq-intel main.ts
-        echo "Compiling for Linux ARM..." 
-        deno compile -NR --target aarch64-unknown-linux-gnu --output yt-dlp-hq-arm main.ts
-
+    # - name: Build step
+      # run: deno task build
+      
     - name: Move exe to release/ 
       run: |
         mkdir -p release
-        echo "Move executables to release/"
-        mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
-        echo "List release/: $(ls -R release/)"
+        if ls yt-dlp-hq* >/dev/null 2>&1; then
+          mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
+          echo "release_empty=false" >> $GITHUB_ENV
+          echo "Executables moved to release/ "
+          echo "List release/: $(ls -R release/)"
+        else
+          echo "No files starting with 'yt-dlp-hq-' found in the current directory."
+          echo "release_empty=true" >> $GITHUB_ENV
+        fi
 
     - name: Upload binaries to release
+      if: env.release_empty == 'false'
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.yt-dlp-hq }}  # ${{ secrets.GITHUB_TOKEN }}
         file: release/* 
-        tag: ${{ matrix.os }}-${{ github.run_id }}
+        tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
         file_glob: true

@@ -1,6 +1,5 @@
 .deno_lsp/
 .vscode/
-out/
 *.m4a
 *.mp4
 .git/
