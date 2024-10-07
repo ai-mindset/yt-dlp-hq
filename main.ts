@@ -165,12 +165,12 @@ async function runYtDlpCommand(
     const [mode, ext]: [string, string] = input === AUDIO_ID
         ? ["audio", "m4a"]
         : input === VIDEO_ID
-        ? ["video", "mp4"]
-        : (() => {
-            throw new Error(
-                `Invalid input. Enter  ${AUDIO_ID} (audio) or ${VIDEO_ID} (video)`,
-            );
-        })();
+            ? ["video", "mp4"]
+            : (() => {
+                throw new Error(
+                    `Invalid input. Enter  ${AUDIO_ID} (audio) or ${VIDEO_ID} (video)`,
+                );
+            })();
 
     console.log(`Downloading ${mode}...`);
     const command = new Deno.Command(ytDlpCommand, {
@@ -182,29 +182,31 @@ async function runYtDlpCommand(
     if (code === 0) {
         console.log("Download completed successfully!");
     } else {
-        console.error("Error occurred during download:");
+        console.error(
+            "runYtDlpCommand(): An error occurred during download: ",
+        );
         console.error(new TextDecoder().decode(stderr));
     }
 }
 
 /**
- * Merges video and audio files using ffmpeg and then deletes the input files.
+ * Merges video and audio files using FFmpeg and then deletes the input files.
  *
  * This function performs the following steps:
- * 1. Executes an ffmpeg command to merge 'my_video.mp4' and 'my_audio.m4a' into an output.mp4.
- * 2. Waits for the ffmpeg process to complete.
+ * 1. Executes an FFmpeg command to merge 'my_video.mp4' and 'my_audio.m4a' into an output.mp4.
+ * 2. Waits for the FFmpeg process to complete.
  * 3. If successful, deletes the input files ('my_video.mp4' and 'my_audio.m4a').
  *
  * @param url - The video URL to download audio from.
  * @param ytDlpCommand - yt-dlp command for OS, depending on installation (GitHub or package manager)
  *
- * @throws {Error} If the ffmpeg process exits with a non-zero status code.
+ * @throws {Error} If the FFmpeg process exits with a non-zero status code.
  * @throws {Deno.errors.NotFound} If input files are not found.
  * @throws {Deno.errors.PermissionDenied} If there's no permission to read input files or write output file.
  *
  * @returns {Promise<void>} A promise that resolves when the merge is complete and input files are deleted.
  *
- * @requires ffmpeg to be installed and accessible in the system's PATH.
+ * @requires FFmpeg to be installed and accessible in the system's PATH.
  * @requires 'my_video.mp4' and 'my_audio.m4a' to exist in the same directory as the script.
  * @requires Deno to be run with --allow-run, --allow-read, and --allow-write permissions.
  *
@@ -224,12 +226,13 @@ async function mergeAndCleanup(
     ytDlpCommand: string,
 ): Promise<void> {
     try {
+        // FIXME
         const title = new Deno.Command(ytDlpCommand, {
             args: ["--print", "filename", url],
         });
-        const output = await title.output();
+        const titleOut = await title.output();
         const out = new TextDecoder().decode(
-            output.success ? output.stdout : output.stderr,
+            titleOut.success ? titleOut.stdout : titleOut.stderr,
         );
         const videoTitle = processFilename(out.trim());
 
@@ -257,12 +260,12 @@ async function mergeAndCleanup(
         if (code !== 0) {
             const errorOutput = new TextDecoder().decode(stderr);
             throw new Error(
-                `ffmpeg process failed with code ${code}. Error: ${errorOutput}`,
+                `FFmpeg process failed with code ${code}. Error: ${errorOutput}`,
             );
         }
 
         // Log success message
-        console.log("ffmpeg process completed successfully");
+        console.log("FFmpeg process completed successfully");
         console.log(new TextDecoder().decode(stdout));
 
         // Delete input files
@@ -274,9 +277,12 @@ async function mergeAndCleanup(
         console.log("Merge completed and input files deleted successfully");
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("An error occurred: ", error.message);
+            console.error("mergeAndCleanup(): Error: ", error.message);
         } else {
-            console.error("An unexpected error occurred: ", error);
+            console.error(
+                "mergeAndCleanup(): An unexpected error occurred: ",
+                error,
+            );
         }
         throw error; // Re-throw the error for the caller to handle
     }
@@ -297,7 +303,6 @@ async function main() {
         .parse(Deno.args);
 
     const url = args[0];
-    console.log("URL passed: ", url);
     const isInstalled = await checkYtDlpInstalled();
     const ytDlpCommand = getYtDlpCommand(isInstalled);
 
@@ -311,13 +316,14 @@ async function main() {
         await runYtDlpCommand(url, AUDIO_ID, ytDlpCommand);
         // Download video stream
         await runYtDlpCommand(url, VIDEO_ID, ytDlpCommand);
+
         // Merge streams and tidy up
-        await mergeAndCleanup(ytDlpCommand, url);
+        await mergeAndCleanup(url, ytDlpCommand);
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Failed with error: ", error.message);
+            console.error("main(): Error: ", error.message);
         } else {
-            console.error("An unexpected error occurred: ", error);
+            console.error("main(): An unexpected error occurred: ", error);
         }
     }
 }
