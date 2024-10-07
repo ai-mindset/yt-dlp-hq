@@ -48,12 +48,12 @@ jobs:
     - name: Build step
       run: deno task build
       
-    - name: Move exe to `release/` 
+    - name: Move exe to release/ 
       run: |
         mkdir -p release
-        echo "Move executables to `release/` "
+        echo "Move executables to release/ "
         mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
-        echo "List `release/`: $(ls -R release/)"
+        echo "List release/: $(ls -R release/)"
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
