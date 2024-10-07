@@ -42,13 +42,13 @@ jobs:
       run: ffmpeg -version
 
     - name: Build step
-      run: "deno task build"
+      run: deno task build
       
     - name: Move exe to release/ 
       run: |
         mkdir -p release
-        echo "Move executables to release/"
-        mv yt-dlp-hq.exe yt-dlp-hq-mac-intel yt-dlp-hq-mac-arm yt-dlp-hq-intel yt-dlp-hq-arm release/ || true
+        echo "Move executables to release/ "
+        mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
         echo "List release/: $(ls -R release/)"
 
     - name: Upload binaries to release
@@ -56,6 +56,6 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: release/* 
-        tag: ${{ matrix.os }}-${{ github.run_id }}
+        tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
         file_glob: true
