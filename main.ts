@@ -165,12 +165,12 @@ async function runYtDlpCommand(
     const [mode, ext]: [string, string] = input === AUDIO_ID
         ? ["audio", "m4a"]
         : input === VIDEO_ID
-            ? ["video", "mp4"]
-            : (() => {
-                throw new Error(
-                    `Invalid input. Enter  ${AUDIO_ID} (audio) or ${VIDEO_ID} (video)`,
-                );
-            })();
+        ? ["video", "mp4"]
+        : (() => {
+            throw new Error(
+                `Invalid input. Enter  ${AUDIO_ID} (audio) or ${VIDEO_ID} (video)`,
+            );
+        })();
 
     console.log(`Downloading ${mode}...`);
     const command = new Deno.Command(ytDlpCommand, {
@@ -298,7 +298,9 @@ async function main() {
     const { args } = await new Command()
         .name("yt-dlp-hq")
         .version("1.0.0")
-        .description("Download high quality videos with audio, using yt-dlp")
+        .description(
+            "Download high quality videos with audio, using yt-dlp and FFmpeg",
+        )
         .arguments("<url:string>")
         .parse(Deno.args);
 
