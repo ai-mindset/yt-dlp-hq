@@ -49,14 +49,16 @@ jobs:
         mkdir -p release
         if ls yt-dlp-hq* >/dev/null 2>&1; then
           mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
+          echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables moved to release/ "
           echo "List release/: $(ls -R release/)"
         else
           echo "No files starting with 'yt-dlp-hq-' found in the current directory."
+          echo "release_empty=true" >> $GITHUB_ENV
         fi
 
-
     - name: Upload binaries to release
+      if: env.release_empty == 'false'
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
