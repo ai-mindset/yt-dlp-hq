@@ -19,7 +19,6 @@ jobs:
     steps:
     - name: Action for checking out a repo 
       uses: actions/checkout@v4
-      id: tag_version
 
     - name: GitHub Tag action
       uses: mathieudutour/github-tag-action@v6.2
@@ -62,7 +61,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: release/* 
-        tag: ${{ steps.tag_version.outputs.new_tag }} # ${{ matrix.os }}-${{ github.run_id }}
+        tag:${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
         name: Release ${{ steps.tag_version.outputs.new_tag }}
         overwrite: true
         file_glob: true
