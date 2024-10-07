@@ -62,7 +62,7 @@ jobs:
       if: env.release_empty == 'false'
       uses: svenstaro/upload-release-action@v2
       with:
-        repo_token: ${{ secrets.yt-dlp-hq }}  # ${{ secrets.GITHUB_TOKEN }}
+        repo_token: ${{ secrets.YT_DLP_HQ}}  # ${{ secrets.GITHUB_TOKEN }}
         file: release/* 
         tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
