@@ -51,7 +51,7 @@ jobs:
         echo "Compress executables to .tar"
         for file in release/*; do
           if [ -x "$file" ]; then
-            tar -cvf "release/${file}.tar" "$file"
+            tar -cvf "${file}.tar" "$file"
             echo "Compressed $file to ${file}.tar"
           fi
         done
