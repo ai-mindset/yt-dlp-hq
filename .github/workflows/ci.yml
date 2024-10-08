@@ -48,7 +48,7 @@ jobs:
       run: |
         mkdir -p release
         deno task build
-        cd release
+        cd release/
         for file in *; do
           if [ -x "$file" ]; then
             tar -cvf "${file}.tar" "$file"
@@ -56,12 +56,12 @@ jobs:
           fi
         done
 
-        if ls release/* >/dev/null 2>&1; then
+        if ls release/*.tar >/dev/null 2>&1; then
           echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables generated"
           echo "List release/: $(ls -R release/)"
         else
-          echo "No files starting found in release/"
+          echo "No files found in release/"
           echo "release_empty=true" >> $GITHUB_ENV
         fi
 
