@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
+        version: [1.0.0]
     permissions:
       contents: write
     
@@ -48,13 +49,20 @@ jobs:
       run: |
         mkdir -p release
         deno task build
-        if ls release/yt-dlp-hq* >/dev/null 2>&1; then
-          # mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
+        echo "Compress executables to .tar"
+        for file in release/*; do
+          if [ -x "$file" ]; then
+            tar -cvf "${file}.tar" "$file"
+            echo "Compressed $file to ${file}.tar"
+          fi
+        done
+        echo "Check if release/ is empty"
+        if ls release/*.tar >/dev/null 2>&1; then
           echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables generated"
           echo "List release/: $(ls -R release/)"
         else
-          echo "No files starting with 'yt-dlp-hq-' found in the release/"
+          echo "No files found in release/"
           echo "release_empty=true" >> $GITHUB_ENV
         fi
 
@@ -62,9 +70,8 @@ jobs:
       if: env.release_empty == 'false'
       uses: svenstaro/upload-release-action@v2
       with:
-        # repo_token: ${{ secrets.YT_DLP_HQ}}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: release/* 
-        tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
+        file: release/*.tar 
+        tag: ${{ matrix.version }} # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
         file_glob: true

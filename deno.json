@@ -2,11 +2,11 @@
     "tasks": {
         "build": "deno task compile",
         "compile": "deno task compile:windows && deno task compile:macos-intel && deno task compile:macos-arm && deno task compile:linux-intel && deno task compile:linux-arm",
-        "compile:windows": "deno compile -NR --target x86_64-pc-windows-msvc -o release/yt-dlp-hq.exe main.ts",
-        "compile:macos-intel": "deno compile -NR --target x86_64-apple-darwin -o release/yt-dlp-hq-intel-mac main.ts",
-        "compile:macos-arm": "deno compile -NR --target aarch64-apple-darwin -o release/yt-dlp-hq-arm-mac main.ts",
-        "compile:linux-intel": "deno compile -NR --target x86_64-unknown-linux-gnu -o release/yt-dlp-hq-intel-linux main.ts",
-        "compile:linux-arm": "deno compile -NR --target aarch64-unknown-linux-gnu -o release/yt-dlp-hq-arm-linux main.ts",
+        "compile:windows": "deno compile --allow-run --allow-write --target x86_64-pc-windows-msvc -o release/yt-dlp-hq.exe main.ts",
+        "compile:macos-intel": "deno compile --allow-run --allow-write --target x86_64-apple-darwin -o release/yt-dlp-hq-intel-mac main.ts",
+        "compile:macos-arm": "deno compile --allow-run --allow-write --target aarch64-apple-darwin -o release/yt-dlp-hq-arm-mac main.ts",
+        "compile:linux-intel": "deno compile --allow-run --allow-write --target x86_64-unknown-linux-gnu -o release/yt-dlp-hq-intel-linux main.ts",
+        "compile:linux-arm": "deno compile --allow-run --allow-write --target aarch64-unknown-linux-gnu -o release/yt-dlp-hq-arm-linux main.ts",
         "dev": "deno run --watch main.ts",
         "lint": "deno lint && deno fmt --check",
         "fmt": "deno fmt"
