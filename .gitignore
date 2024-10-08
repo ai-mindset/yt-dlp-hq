@@ -1,3 +1,4 @@
+release/
 .deno_lsp/
 .vscode/
 *.m4a
