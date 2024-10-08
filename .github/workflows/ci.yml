@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
+        id: 1.0.0
     permissions:
       contents: write
     
@@ -69,9 +70,8 @@ jobs:
       if: env.release_empty == 'false'
       uses: svenstaro/upload-release-action@v2
       with:
-        # repo_token: ${{ secrets.YT_DLP_HQ}}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: release/*.tar 
-        tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
+        tag: ${{ matrix.id }} # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
         file_glob: true
