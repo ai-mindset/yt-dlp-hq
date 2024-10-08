@@ -48,14 +48,14 @@ jobs:
       run: |
         mkdir -p release
         deno task build
-        cd release/
-        for file in *; do
+        echo "Compress executables to .tar"
+        for file in release/*; do
           if [ -x "$file" ]; then
-            tar -cvf "${file}.tar" "$file"
+            tar -cvf "release/${file}.tar" "$file"
             echo "Compressed $file to ${file}.tar"
           fi
         done
-
+        echo "Check if release/ is empty"
         if ls release/*.tar >/dev/null 2>&1; then
           echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables generated"
