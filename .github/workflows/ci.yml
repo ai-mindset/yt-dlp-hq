@@ -56,12 +56,12 @@ jobs:
           fi
         done
 
-        if ls release/yt-dlp-hq* >/dev/null 2>&1; then
+        if ls release/* >/dev/null 2>&1; then
           echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables generated"
           echo "List release/: $(ls -R release/)"
         else
-          echo "No files starting with 'yt-dlp-hq-' found in the release/"
+          echo "No files starting found in release/"
           echo "release_empty=true" >> $GITHUB_ENV
         fi
 
