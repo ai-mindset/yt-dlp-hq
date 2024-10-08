@@ -71,7 +71,7 @@ jobs:
       with:
         # repo_token: ${{ secrets.YT_DLP_HQ}}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: release/* 
+        file: release/*.tar 
         tag: ${{ github.run_id }}  # ${{ matrix.os }}-${{ github.run_id }}
         overwrite: true
         file_glob: true
