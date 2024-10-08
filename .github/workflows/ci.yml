@@ -48,8 +48,15 @@ jobs:
       run: |
         mkdir -p release
         deno task build
+        cd release
+        for file in *; do
+          if [ -x "$file" ]; then
+            tar -cvf "${file}.tar" "$file"
+            echo "Compressed $file to ${file}.tar"
+          fi
+        done
+
         if ls release/yt-dlp-hq* >/dev/null 2>&1; then
-          # mv yt-dlp-hq-arm-linux yt-dlp-hq-arm-mac yt-dlp-hq.exe yt-dlp-hq-intel-linux yt-dlp-hq-intel-mac release/ || true
           echo "release_empty=false" >> $GITHUB_ENV
           echo "Executables generated"
           echo "List release/: $(ls -R release/)"
