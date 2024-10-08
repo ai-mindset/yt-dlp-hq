@@ -7,8 +7,8 @@ High quality video downloads using yt-dlp and FFmpeg
 [FFmpeg](https://ffmpeg.org/)  
 
 ## Usage  
-Example command for Intel-based systems 
+Example command for Intel-based Linux systems 
 ```console
-$ curl -O https://github.com/ai-mindset/yt-dlp-hq/releases/download/v1.0.0/yt-dlp-hq-intel-linux && chmod u+x yt-dlp-hq-intel-linux
+$ curl -L -O https://github.com/ai-mindset/yt-dlp-hq/releases/download/1.0.0/yt-dlp-hq-intel-linux.tar && tar xvf yt-dlp-hq-intel-linux.tar && cd release
 $ ./yt-dlp-hq-intel-linux https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
