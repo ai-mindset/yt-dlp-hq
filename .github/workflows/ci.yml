@@ -26,6 +26,12 @@ jobs:
       with:
         deno-version: rc 
 
+    - name: Format code
+      run: deno task fmt
+
+    - name: Lint code
+      run: deno task lint 
+
     - name: Download yt-dlp_linux with curl
       run: | 
         curl -O https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp_linux
