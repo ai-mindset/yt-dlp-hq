@@ -8,8 +8,8 @@
         "compile:linux-intel": "deno compile --allow-run --allow-write --target x86_64-unknown-linux-gnu -o release/yt-dlp-hq-intel-linux main.ts",
         "compile:linux-arm": "deno compile --allow-run --allow-write --target aarch64-unknown-linux-gnu -o release/yt-dlp-hq-arm-linux main.ts",
         "dev": "deno run --watch main.ts",
-        "lint": "deno lint",
-        "fmt": "deno fmt --check"
+        "lint": "deno lint *.ts",
+        "fmt": "deno fmt --check *.ts"
     },
     "imports": {
         "@c4spar/mock-command": "jsr:@c4spar/mock-command@^1.0.1",
