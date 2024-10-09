@@ -197,7 +197,6 @@ async function runYtDlpCommand(
  */
 async function getUnixDistroType(): Promise<string> {
     try {
-        // Check for /etc/os-release file
         const cmd = new Deno.Command("cat", {
             args: ["/etc/os-release"],
         });
@@ -233,6 +232,9 @@ async function getUnixDistroType(): Promise<string> {
         if (rhelCheck) return "rhel";
 
         if (OS === "darwin") return "darwin";
+
+        // In theory we should never reach here
+        return "unknown";
     } catch (error) {
         console.error("Error determining Linux distribution:", error);
         return "unknown";
@@ -460,12 +462,12 @@ async function main() {
 
     if (!isYtdlpInstalled) {
         await downloadYtDlp();
+        updatePath();
     }
     if (!isFfmpegInstalled) {
         await installFfmpeg();
+        updatePath();
     }
-
-    updatePath();
 
     try {
         // Download audio stream
