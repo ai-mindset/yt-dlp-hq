@@ -9,11 +9,12 @@ const AUDIO_ID: number = 140;
 const VIDEO_ID: number = 609;
 
 /**
- * Checks if yt-dlp is installed and accessible in the system PATH.
- * @returns A promise that resolves to true if yt-dlp is installed, false otherwise.
+ * Checks if a package is installed and accessible in the system PATH.
+ * @param {string} packageName The package whose installation status we want to check
+ * @returns A promise that resolves to true if `packageName` is installed, false otherwise.
  */
-async function checkYtDlpInstalled(): Promise<boolean> {
-    const command = new Deno.Command("yt-dlp", { args: ["--version"] });
+async function checkPackageInstalled(packageName: string): Promise<boolean> {
+    const command = new Deno.Command(packageName, { args: ["--help"] });
     try {
         const { code } = await command.output();
         return code === 0;
@@ -96,6 +97,7 @@ function updatePath(): void {
             "PATH",
             `${currentDir}${OS === "windows" ? ";" : ":"}${path}`,
         );
+        console.log("PATH updated");
     }
 }
 
@@ -186,6 +188,153 @@ async function runYtDlpCommand(
             "runYtDlpCommand(): An error occurred during download: ",
         );
         console.error(new TextDecoder().decode(stderr));
+    }
+}
+
+/**
+ * Determines the Linux distribution type.
+ * @returns A Promise {string} indicating the distribution type: "debian", "rhel", or "unknown".
+ */
+async function getUnixDistroType(): Promise<string> {
+    try {
+        // Check for /etc/os-release file
+        const cmd = new Deno.Command("cat", {
+            args: ["/etc/os-release"],
+        });
+        const { code, stdout } = await cmd.output();
+
+        if (code === 0) {
+            const output = new TextDecoder().decode(stdout);
+
+            if (
+                output.toLowerCase().includes("debian") ||
+                output.toLowerCase().includes("ubuntu")
+            ) {
+                return "debian";
+            }
+            if (
+                output.toLowerCase().includes("rhel") ||
+                output.toLowerCase().includes("fedora") ||
+                output.toLowerCase().includes("centos")
+            ) {
+                return "rhel";
+            }
+        }
+
+        // If /etc/os-release doesn't provide conclusive information, check for specific files
+        const debianCheck = await Deno.stat("/etc/debian_version").catch(() =>
+            null
+        );
+        if (debianCheck) return "debian";
+
+        const rhelCheck = await Deno.stat("/etc/redhat-release").catch(() =>
+            null
+        );
+        if (rhelCheck) return "rhel";
+
+        if (OS === "darwin") return "darwin";
+    } catch (error) {
+        console.error("Error determining Linux distribution:", error);
+        return "unknown";
+    }
+}
+
+/**
+ * Install package using distro's package manager
+ * @param {string} distro The system's Linux distribution
+ * @param {string} packageName The package you want to install, as found in the package manager's registry
+ * @returns {boolean} Flag signifying package installation success (true) or fail (false)
+ */
+async function installFromPackageManager(
+    distro: string,
+    packageName: string,
+): Promise<boolean> {
+    const packageManager = distro === "debian"
+        ? ["apt", "update"]
+        : distro === "rhel"
+        ? ["dnf", "check-update"]
+        : distro === "darwin"
+        ? ["brew", "update"]
+        : ["unknown", "unknown"];
+
+    let cmd = "";
+
+    // Debian and rhel require sudo for package manager to install package
+    if (distro !== "darwin") {
+        cmd = "sudo";
+    }
+    if (distro === "darwin") {
+        cmd = "brew";
+    }
+
+    if (packageManager[0] === "unknown") {
+        throw new Error("Unsupported Linux distribution");
+    }
+
+    try {
+        const updateCmd = new Deno.Command(cmd, {
+            args: [packageManager[0], packageManager[1]],
+        });
+        const updateResult = await updateCmd.output();
+        const updateStdout: string = new TextDecoder().decode(
+            updateResult.stdout,
+        );
+        if (updateStdout.length === 0) {
+            console.error("Failed to update package list");
+            return false;
+        }
+        const installCmd = new Deno.Command(cmd, {
+            args: [packageManager[0], "install", "-y", packageName],
+        });
+        const installResult = await installCmd.output();
+        if (!installResult.success) {
+            console.error(`Failed to install ${packageName}`);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Error installing dependencies: ", error);
+        return false;
+    }
+}
+
+/**
+ * Updates Linux package manager list and installs FFmpeg.
+ * FFmpeg installation is more complex and varies by OS
+ * This is a simplified version that assumes you're on a system with a package manager
+ * @returns A boolean indicating if the installation was successful.
+ */
+async function installFfmpeg(): Promise<boolean> {
+    const distro = await getUnixDistroType();
+    try {
+        // Update apt package list
+        if (OS === "linux") {
+            if (distro === "debian") {
+                return await installFromPackageManager(distro, "ffmpeg");
+            }
+            if (distro === "rhel") {
+                return await installFromPackageManager(distro, "ffmpeg-free");
+            }
+        }
+
+        if (OS === "darwin") {
+            return await installFromPackageManager(distro, "ffmpeg");
+        }
+
+        if (OS === "windows") {
+            console.log("Please install FFmpeg manually on Windows.");
+            console.log(
+                "Visit https://ffmpeg.org/download.html for instructions.",
+            );
+            throw new Error("FFmpeg was not installed");
+        }
+
+        // Return false unless a conditional evaluates to true
+        return false;
+    } catch (error) {
+        console.error("Error during FFmpeg installation:", error);
+        return false;
     }
 }
 
@@ -305,13 +454,18 @@ async function main() {
         .parse(Deno.args);
 
     const url = args[0];
-    const isInstalled = await checkYtDlpInstalled();
-    const ytDlpCommand = getYtDlpCommand(isInstalled);
+    const isYtdlpInstalled = await checkPackageInstalled("yt-dlp");
+    const isFfmpegInstalled = await checkPackageInstalled("ffmpeg");
+    const ytDlpCommand = getYtDlpCommand(isYtdlpInstalled);
 
-    if (!isInstalled) {
+    if (!isYtdlpInstalled) {
         await downloadYtDlp();
-        updatePath();
     }
+    if (!isFfmpegInstalled) {
+        await installFfmpeg();
+    }
+
+    updatePath();
 
     try {
         // Download audio stream
