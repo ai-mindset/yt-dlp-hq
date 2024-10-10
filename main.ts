@@ -4,9 +4,10 @@ const YT_DLP_VERSION = "2024.09.27";
 const FILENAME_WIN = "yt-dlp.exe";
 const FILENAME_MACOS = "yt-dlp_macos";
 const FILENAME_LINUX = "yt-dlp_linux";
+const TEMP_FILES = ["my_video.mp4", "my_audio.m4a"];
 const OS = Deno.build.os;
-const AUDIO_ID: number = 140;
-const VIDEO_ID: number = 609;
+const AUDIO_ID: number = 139;
+const VIDEO_ID: number = 136;
 
 /**
  * Checks if a package is installed and accessible in the system PATH.
@@ -188,6 +189,7 @@ async function runYtDlpCommand(
             "runYtDlpCommand(): An error occurred during download: ",
         );
         console.error(new TextDecoder().decode(stderr));
+        Deno.exit(1);
     }
 }
 
@@ -341,6 +343,39 @@ async function installFfmpeg(): Promise<boolean> {
 }
 
 /**
+ * Attempts to remove all files listed in the `TEMP_FILES` array.
+ * Continues cleanup even if some files are not found or fail to be removed.
+ * Logs the result of each removal attempt.
+ * @returns {Promise<void>}
+ */
+async function cleanup(): Promise<void> {
+    console.log("Cleaning up...");
+    let cleanedCount = 0;
+    let notFoundCount = 0;
+    let errorCount = 0;
+
+    for (const file of TEMP_FILES) {
+        try {
+            await Deno.remove(file);
+            console.log(`Removed: ${file}`);
+            cleanedCount++;
+        } catch (error) {
+            if (error instanceof Deno.errors.NotFound) {
+                console.log(`File not found: ${file}`);
+                notFoundCount++;
+            } else {
+                console.error(`Error removing ${file}:`, error);
+                errorCount++;
+            }
+        }
+    }
+
+    console.log(
+        `Cleanup summary: ${cleanedCount} removed, ${notFoundCount} not found, ${errorCount} errors`,
+    );
+}
+
+/**
  * Merges video and audio files using FFmpeg and then deletes the input files.
  *
  * This function performs the following steps:
@@ -360,24 +395,12 @@ async function installFfmpeg(): Promise<boolean> {
  * @requires FFmpeg to be installed and accessible in the system's PATH.
  * @requires 'my_video.mp4' and 'my_audio.m4a' to exist in the same directory as the script.
  * @requires Deno to be run with --allow-run, --allow-read, and --allow-write permissions.
- *
- * @example
- * ```typescript
- * try {
- *   await mergeAndCleanup();
- *   console.log("Video processing completed successfully.");
- * } catch (error) {
- *   console.error("Video processing failed:", error.message);
- * }
- * ```
  */
-// TODO: Split function into two. merge() and cleanup()
 async function mergeAndCleanup(
     url: string,
     ytDlpCommand: string,
 ): Promise<void> {
     try {
-        // FIXME
         const title = new Deno.Command(ytDlpCommand, {
             args: ["--print", "filename", url],
         });
@@ -391,9 +414,9 @@ async function mergeAndCleanup(
         const ffmpegCommand = new Deno.Command("ffmpeg", {
             args: [
                 "-i",
-                "my_video.mp4",
+                TEMP_FILES[0], // TODO: Use a Record instead?
                 "-i",
-                "my_audio.m4a",
+                TEMP_FILES[1], // TODO: Use a Record instead?
                 "-c:v",
                 "copy",
                 "-c:a",
@@ -420,10 +443,7 @@ async function mergeAndCleanup(
         console.log(new TextDecoder().decode(stdout));
 
         // Delete input files
-        await Promise.all([
-            Deno.remove("my_video.mp4"),
-            Deno.remove("my_audio.m4a"),
-        ]);
+        await cleanup();
 
         console.log("Merge completed and input files deleted successfully");
     } catch (error: unknown) {
@@ -435,7 +455,7 @@ async function mergeAndCleanup(
                 error,
             );
         }
-        throw error; // Re-throw the error for the caller to handle
+        Deno.exit(1);
     }
 }
 
@@ -445,6 +465,8 @@ async function mergeAndCleanup(
  * @example
  * $ deno run -A main.ts https://youtu.be/dQw4w9WgXcQ
  */
+// TODO: consider concentrating all error reporting and handling in one place
+// e.g. in `main()`
 async function main() {
     const { args } = await new Command()
         .name("yt-dlp-hq")
@@ -478,12 +500,14 @@ async function main() {
         // Merge streams and tidy up
         await mergeAndCleanup(url, ytDlpCommand);
     } catch (error: unknown) {
+        await cleanup();
         if (error instanceof Error) {
             console.error("main(): Error: ", error.message);
         } else {
             console.error("main(): An unexpected error occurred: ", error);
         }
     }
+    Deno.exit(1);
 }
 
 if (import.meta.main) {
