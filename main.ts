@@ -512,7 +512,9 @@ async function mergeAndCleanup(
  * Main function that orchestrates the yt-dlp download and execution process.
  * It checks for yt-dlp installation, downloads it if necessary, and runs the video download command.
  * @example
- * $ deno run -A main.ts https://youtu.be/dQw4w9WgXcQ
+ * $ deno run -A main.ts -u https://youtu.be/dQw4w9WgXcQ
+ * $ deno run -A main.ts --url https://youtu.be/dQw4w9WgXcQ --audio-id 140 --video-id 605
+ * $ deno run -A main.ts -u https://youtu.be/dQw4w9WgXcQ -a 140 -v 605
  */
 async function main() {
     const { options } = await new Command()
