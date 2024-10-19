@@ -15,7 +15,7 @@ const DECODER = new TextDecoder();
  * @param {string} packageName The package whose installation status we want to check
  * @returns A promise that resolves to true if `packageName` is installed, false otherwise.
  */
-async function checkPackageInstalled(packageName: string): Promise<boolean> {
+export async function checkPackageInstalled(packageName: string): Promise<boolean> {
     const command = new Deno.Command(packageName, { args: ["--help"] });
     try {
         const { code } = await command.output();
