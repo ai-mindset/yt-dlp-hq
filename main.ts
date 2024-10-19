@@ -166,7 +166,7 @@ function processFilename(filename: string): string {
 function parseAndLogFormatInfo(input: string): string {
     const lines = input.split("\n");
     let formatSection = false;
-    let filteredOutput: string[] = [];
+    const filteredOutput: string[] = [];
 
     for (const line of lines) {
         if (line.startsWith("[info] Available formats")) {
