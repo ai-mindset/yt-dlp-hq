@@ -1,13 +1,14 @@
 import { Command } from "https://deno.land/x/cliffy/command/mod.ts";
 
-const YT_DLP_VERSION = "2024.09.27";
-const FILENAME_WIN = "yt-dlp.exe";
-const FILENAME_MACOS = "yt-dlp_macos";
-const FILENAME_LINUX = "yt-dlp_linux";
-const TEMP_FILES = ["my_video.mp4", "my_audio.m4a"];
-const OS = Deno.build.os;
-const AUDIO_ID: number = 139;
-const VIDEO_ID: number = 136;
+const YT_DLP_VERSION: string = "2024.09.27";
+const FILENAME_WIN: string = "yt-dlp.exe";
+const FILENAME_MACOS: string = "yt-dlp_macos";
+const FILENAME_LINUX: string = "yt-dlp_linux";
+const TEMP_FILES: string[] = ["my_video.mp4", "my_audio.m4a"];
+const OS: string = Deno.build.os;
+const AUDIO_ID: string[] = ["139", "140", "140-drc"];
+const VIDEO_ID: string[] = ["136", "605", "606"];
+const DECODER = new TextDecoder();
 
 /**
  * Checks if a package is installed and accessible in the system PATH.
@@ -153,6 +154,38 @@ function processFilename(filename: string): string {
 }
 
 /**
+ * Parses and filters format information from yt-dlp output.
+ *
+ * @param input - The string output from yt-dlp to be parsed.
+ * @returns A string containing the filtered output with the format table.
+ *
+ * This function:
+ * 1. Filters out lines starting with "[generic]" and "[youtube]".
+ * 2. Returns the remaining lines, maintaining the original table format.
+ */
+function parseAndLogFormatInfo(input: string): string {
+    const lines = input.split("\n");
+    let formatSection = false;
+    const filteredOutput: string[] = [];
+
+    for (const line of lines) {
+        if (line.startsWith("[info] Available formats")) {
+            formatSection = true;
+        }
+
+        if (formatSection) {
+            filteredOutput.push(line);
+        } else if (
+            !line.startsWith("[generic]") && !line.startsWith("[youtube]")
+        ) {
+            filteredOutput.push(line);
+        }
+    }
+
+    return filteredOutput.join("\n");
+}
+
+/**
  * Runs the yt-dlp command to download audio from the given URL.
  * @param url - The video URL to download audio from.
  * @param input - Format ID from `yt-dlp -F <video url>`
@@ -161,13 +194,13 @@ function processFilename(filename: string): string {
  */
 async function runYtDlpCommand(
     url: string,
-    input: number,
+    input: string,
     ytDlpCommand: string,
 ): Promise<void> {
     // TODO: check VIDEO_ID. Rotate between different IDs, e.g. 606, 612, depending on availability
-    const [mode, ext]: [string, string] = input === AUDIO_ID
+    const [mode, ext]: [string, string] = AUDIO_ID.includes(input)
         ? ["audio", "m4a"]
-        : input === VIDEO_ID
+        : VIDEO_ID.includes(input)
         ? ["video", "mp4"]
         : (() => {
             throw new Error(
@@ -175,20 +208,33 @@ async function runYtDlpCommand(
             );
         })();
 
-    console.log(`Downloading ${mode}...`);
+    console.log(`Downloading ${url} ${mode} stream...`);
     const command = new Deno.Command(ytDlpCommand, {
         args: ["-f", input.toString(), url, "-o", `my_${mode}.${ext}`],
     });
 
-    const { code, stderr } = await command.output();
+    const { code, stderr, stdout } = await command.output();
 
     if (code === 0) {
-        console.log("Download completed successfully!");
+        console.log(`runYtDlpCommand():\n ${DECODER.decode(stdout)}`);
     } else {
+        const err = DECODER.decode(stderr);
+        if (err.includes("Requested format is not available")) {
+            const command = new Deno.Command(ytDlpCommand, {
+                args: ["-F", input.toString(), url],
+            });
+            const { stdout } = await command.output();
+            console.error(
+                `%crunYtDlpCommand(): ${mode} ID not available. Please select a valid ID: `,
+                "color: orange",
+            );
+            console.error(`${parseAndLogFormatInfo(DECODER.decode(stdout))}`);
+            Deno.exit(1);
+        }
         console.error(
-            "runYtDlpCommand(): An error occurred during download: ",
+            `%crunYtDlpCommand(): An error occurred during download: ${err} `,
+            "color: orange",
         );
-        console.error(new TextDecoder().decode(stderr));
         Deno.exit(1);
     }
 }
@@ -205,7 +251,7 @@ async function getUnixDistroType(): Promise<string> {
         const { code, stdout } = await cmd.output();
 
         if (code === 0) {
-            const output = new TextDecoder().decode(stdout);
+            const output = DECODER.decode(stdout);
 
             if (
                 output.toLowerCase().includes("debian") ||
@@ -238,7 +284,9 @@ async function getUnixDistroType(): Promise<string> {
         // In theory we should never reach here
         return "unknown";
     } catch (error) {
-        console.error("Error determining Linux distribution:", error);
+        console.error(
+            `Error determining Linux distribution: ${error}`,
+        );
         return "unknown";
     }
 }
@@ -280,7 +328,7 @@ async function installFromPackageManager(
             args: [packageManager[0], packageManager[1]],
         });
         const updateResult = await updateCmd.output();
-        const updateStdout: string = new TextDecoder().decode(
+        const updateStdout: string = DECODER.decode(
             updateResult.stdout,
         );
         if (updateStdout.length === 0) {
@@ -405,10 +453,11 @@ async function mergeAndCleanup(
             args: ["--print", "filename", url],
         });
         const titleOut = await title.output();
-        const out = new TextDecoder().decode(
+        const out = DECODER.decode(
             titleOut.success ? titleOut.stdout : titleOut.stderr,
         );
         const videoTitle = processFilename(out.trim());
+        console.log(`Downloaded ${out.trim()}. Cleaning up...`);
 
         // Create a new command
         const ffmpegCommand = new Deno.Command("ffmpeg", {
@@ -432,7 +481,7 @@ async function mergeAndCleanup(
 
         // Check if the command was successful
         if (code !== 0) {
-            const errorOutput = new TextDecoder().decode(stderr);
+            const errorOutput = DECODER.decode(stderr);
             throw new Error(
                 `FFmpeg process failed with code ${code}. Error: ${errorOutput}`,
             );
@@ -463,21 +512,40 @@ async function mergeAndCleanup(
  * Main function that orchestrates the yt-dlp download and execution process.
  * It checks for yt-dlp installation, downloads it if necessary, and runs the video download command.
  * @example
- * $ deno run -A main.ts https://youtu.be/dQw4w9WgXcQ
+ * $ deno run -A main.ts -u https://youtu.be/dQw4w9WgXcQ
+ * $ deno run -A main.ts --url https://youtu.be/dQw4w9WgXcQ --audio-id 140 --video-id 605
+ * $ deno run -A main.ts -u https://youtu.be/dQw4w9WgXcQ -a 140 -v 605
  */
-// TODO: consider concentrating all error reporting and handling in one place
-// e.g. in `main()`
 async function main() {
-    const { args } = await new Command()
+    const { options } = await new Command()
         .name("yt-dlp-hq")
         .version("1.0.0")
         .description(
             "Download high quality videos with audio, using yt-dlp and FFmpeg",
         )
-        .arguments("<url:string>")
+        .option("-u, --url <url:string>", "A video URL string")
+        .option(
+            "-a, --audio-id [audioID:string]",
+            "A valid yt-dlp audio ID. See yt-dlp -F",
+        )
+        .option(
+            "-v, --video-id [videoID:string]",
+            "A valid yt-dlp video ID. See yt-dlp -F",
+        )
         .parse(Deno.args);
 
-    const url = args[0];
+    const optionValues: string[] = Object.entries(options)
+        .map(([_, value]) => `${value ?? "Not provided"}`)
+        .filter((entry) => !entry.startsWith("_")); // Exclude internal properties
+
+    const url: string = optionValues[0];
+    const audioId: string | undefined = optionValues[1] === undefined
+        ? AUDIO_ID[0]
+        : optionValues[1];
+    const videoId: string | undefined = optionValues[2] === undefined
+        ? VIDEO_ID[0]
+        : optionValues[2];
+
     const isYtdlpInstalled = await checkPackageInstalled("yt-dlp");
     const isFfmpegInstalled = await checkPackageInstalled("ffmpeg");
     const ytDlpCommand = getYtDlpCommand(isYtdlpInstalled);
@@ -493,9 +561,9 @@ async function main() {
 
     try {
         // Download audio stream
-        await runYtDlpCommand(url, AUDIO_ID, ytDlpCommand);
+        await runYtDlpCommand(url, audioId, ytDlpCommand);
         // Download video stream
-        await runYtDlpCommand(url, VIDEO_ID, ytDlpCommand);
+        await runYtDlpCommand(url, videoId, ytDlpCommand);
 
         // Merge streams and tidy up
         await mergeAndCleanup(url, ytDlpCommand);
